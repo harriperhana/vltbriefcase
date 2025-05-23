@@ -48,7 +48,7 @@ foreach (glob("../scripts/getinstats/team/stat/*") as $stat) {
 $response = [
     "map" => map2array("../tf/addons/sourcemod/data/vltbriefcase/map"),
     "players" => $players,
-    "teams" => $teams
+    "teams" => array_reverse($teams)
 ];
 
 header("Content-Type: application/json; charset=utf-8");
