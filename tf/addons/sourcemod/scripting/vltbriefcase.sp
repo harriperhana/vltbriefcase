@@ -22,11 +22,11 @@ public void OnPluginStart()
 public void OnMapStart()
 {
 	
-	CreateTimer(1.0, TimerUpdate, _, TIMER_REPEAT);
+	CreateTimer(1.0, UpdateIntelligence, _, TIMER_REPEAT);
 
 }
 
-public Action TimerUpdate(Handle Timer)
+public Action UpdateIntelligence(Handle Timer)
 {
 
 	WriteMapIntelligence();
@@ -44,7 +44,7 @@ public Action TimerUpdate(Handle Timer)
 		}
 	
 	}
-	
+
 	return Plugin_Continue;
 
 }
@@ -84,10 +84,13 @@ void WriteTeamIntelligence(int TeamId)
 	
 	int Humans, Bots;
 	GetPlayerCount(TeamId, Humans, Bots);
+
+	int Score = GetTeamScore(TeamId);
 	
 	Handle FileHandle = OpenFile(TeamStat, "w");
 	
 	WriteFileLine(FileHandle, "id=%d", TeamId);
+	WriteFileLine(FileHandle, "score=%d", Score);
 	WriteFileLine(FileHandle, "players=%d", Humans + Bots);
 	WriteFileLine(FileHandle, "humans=%d", Humans);
 	WriteFileLine(FileHandle, "bots=%d", Bots);
@@ -102,12 +105,14 @@ void WritePlayerIntelligence(int Client)
 	if (!IsClientConnected(Client))
 		return;
 
+    int Serial = GetClientSerial(Client);
+
 	char SteamId[64];
 	GetClientAuthId(Client, AuthId_Steam2, SteamId, sizeof(SteamId));
 	ReplaceString(SteamId, sizeof(SteamId), ":", "");
 	
 	char PlayerIntelligence[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, PlayerIntelligence, sizeof(PlayerIntelligence), "data/vltbriefcase/player/%s", SteamId);
+	BuildPath(Path_SM, PlayerIntelligence, sizeof(PlayerIntelligence), "data/vltbriefcase/player/%d", Serial);
 	
 	Handle FileHandle = OpenFile(PlayerIntelligence, "w");
 	
@@ -117,37 +122,42 @@ void WritePlayerIntelligence(int Client)
 	char IP[32];
 	GetClientIP(Client, IP, sizeof(IP));
 
+	char Weapon[64];
+	GetClientWeapon(Client, Weapon, sizeof(Weapon));
+
 	int Team = GetClientTeam(Client);
 	int Class = GetEntProp(Client, Prop_Send, "m_iClass");
+	int Health = GetClientHealth(Client);
 	int Kills = GetClientFrags(Client);
 	int Deaths = GetClientDeaths(Client);
+	bool Alive = IsPlayerAlive(Client);
 	int Time = RoundToNearest(GetClientTime(Client));
 
-	WriteFileLine(FileHandle, "name=%s", Name);
 	WriteFileLine(FileHandle, "steamid=%s", SteamId);
 	WriteFileLine(FileHandle, "ip=%s", IP);
-	WriteFileLine(FileHandle, "human=%d", IsFakeClient(Client) ? 0 : 1);
-	WriteFileLine(FileHandle, "team=%d", Team);
-	WriteFileLine(FileHandle, "class=%d", Class);
+	WriteFileLine(FileHandle, "name=%s", Name);
+	WriteFileLine(FileHandle, "health=%d", Health);
 	WriteFileLine(FileHandle, "kills=%d", Kills);
 	WriteFileLine(FileHandle, "deaths=%d", Deaths);
+	WriteFileLine(FileHandle, "alive=%d", Alive);
+	WriteFileLine(FileHandle, "weapon=%s", Weapon);
 	WriteFileLine(FileHandle, "time=%d", Time);
+	WriteFileLine(FileHandle, "class=%d", Class);
+	WriteFileLine(FileHandle, "team=%d", Team);
 
 	CloseHandle(FileHandle);
 
 }
 
-public void OnClientDisconnect(int client)
+public void OnClientDisconnect(int Client)
 {
 
-	if (IsFakeClient(client)) return;
+	if (IsFakeClient(Client)) return;
 
-	char SteamId[64];
-	GetClientAuthId(client, AuthId_Steam2, SteamId, sizeof(SteamId));
-	ReplaceString(SteamId, sizeof(SteamId), ":", "");
+	int Serial = GetClientSerial(Client);
 
 	char PlayerIntelligence[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, PlayerIntelligence, sizeof(PlayerIntelligence), "data/vltbriefcase/player/%s", SteamId);
+	BuildPath(Path_SM, PlayerIntelligence, sizeof(PlayerIntelligence), "data/vltbriefcase/player/%d", Serial);
 
 	DeleteFile(PlayerIntelligence);
 
