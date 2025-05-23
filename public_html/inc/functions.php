@@ -12,6 +12,11 @@ function player2array(string $file): array {
 
     }, $intelligence);
 
+    $intelligence["class"] = [
+        "id" => $intelligence["class"],
+        "name" => get_classrole($intelligence["class"])
+    ];
+
     $intelligence["team"] = [
         "id" => $intelligence["team"],
         "name" => get_team($intelligence["team"])
@@ -56,9 +61,10 @@ function get_team(int $id): string {
 
 }
 
-function get_role(int $id): string {
+function get_classrole(int $id): string {
 
     return [
+        0 => "",
         1 => "Scout",
         2 => "Sniper",
         3 => "Soldier",
